@@ -240,22 +240,26 @@ class NotificationDaemon(dbus.service.Object):
         vBox = Gtk.VBox()
         hBox.pack_start(vBox, False, False, 0)
 
-        summaryLabel = Gtk.Label(label=summary)
+        def set_label_contents(l, s):
+            try:
+                # Parameters: markup_text, length, accel_marker
+                # Return: (success, attr_list, text, accel_char)
+                parse_result = Pango.parse_markup(s, -1, u"\x00")
+                l.set_text(parse_result[2])
+                l.set_attributes(parse_result[1])
+            except GLib.GError:
+                logging.exception("Invalid pango markup.")
+                l.set_text(s)
+
+        summaryLabel = Gtk.Label()
+        set_label_contents(summaryLabel, summary)
         vBox.pack_start(summaryLabel, False, False, 0)
 
         separator = Gtk.HSeparator()
         vBox.pack_start(separator, False, False, 0)
 
         bodyLabel = Gtk.Label()
-        try:
-            # Parameters: markup_text, length, accel_marker
-            # Return: (success, attr_list, text, accel_char)
-            parse_result = Pango.parse_markup(body, -1, u"\x00")
-            bodyLabel.set_text(parse_result[2])
-            bodyLabel.set_attributes(parse_result[1])
-        except GLib.GError:
-            logging.exception("Invalid pango markup. Fix your application.")
-            bodyLabel.set_text(body)
+        set_label_contents(bodyLabel, body)
         vBox.pack_start(bodyLabel, False, False, 0)
 
         # The window's size has default values before showing it.
